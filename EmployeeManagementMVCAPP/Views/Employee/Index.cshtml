@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Employee List Page";
+}
+
+@model IEnumerable<EmployeeManagementMVCAPP.Models.Domain.EmployeeMaster>
+<div class="form-horizontal">
+
+    @*@Html.ActionLink("Add New", // <-- Link text
+    "AddEmployee", // <-- Action Method Name
+    "Employee", // <-- Controller Name
+    null, // <-- Route value
+    null // <-- htmlArguments
+    )*@
+    <div class="form-group">
+        <div style="float: right;">
+            <span>Search</span><input type="text" id="txtSearch" value="" />
+
+        </div>
+        <div>
+            <table id="tblEmployees" class="table table-responsive">
+                <thead>
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Email)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Department)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.DateOfBirth)
+                        </th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tblbody">
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Email)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Department)
+                            </td>
+                            <td>
+                                @{
+                                    string parameterValue = item.DateOfBirth.Date.ToString("dd-MM-yyyy");
+                                }
+                                @Html.DisplayFor(modelItem=>parameterValue)
+                            </td>
+                            <td>
+                                @Html.ActionLink("Edit","Edit","Employee",new { id=item.Emp_ID },new {@class="ui-btn"})
+                            </td>
+                            <td>
+                                <a href="javascript:void(0)" class="ui-btn"  onclick="return DeleteEmployee(@item.Emp_ID);">Delete </a>
+
+                                @*@Html.ActionLink("Delete","","",new { id=item.Emp_ID,href="javascript:void(0)" },new {@class="ui-btn", onclick = "return DeleteEmployee("+item.Emp_ID+");" })*@
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<script>
+    $(function () {
+        //GetEmployees();
+        $("#txtSearch").keyup(function () {
+            GetEmployees();
+        });
+    });
+
+    function GetEmployees() {
+        var EmployeeSearchValue = $.trim($("#txtSearch").val());
+        var SearchModel = new Object();
+        SearchModel.employeesearch = EmployeeSearchValue;
+        $.ajax({
+            type: "POST",
+            url: "/Employee/SearchEmployees",
+            data: JSON.stringify(SearchModel),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (Employees) {
+                $("#tblbody").html("");
+                var bodyAppend = $("#tblbody");
+                var data = jQuery.parseJSON(JSON.stringify(Employees));
+
+                $.each(data, function (i, Employee) {
+                   debugger;
+                   // console.log(Employee)
+                    var date = new Date(Employee.dateOfBirth);
+                    date.setDate(date.getDate() + 1);
+                    var deleteData = "return DeleteEmployee(" + Employee.emp_ID + ")";
+                    var editUrl = "/Employee/Edit/" + Employee.emp_ID;
+                    var rows = "";
+                    rows += "<tr>";
+                    rows += "<td>" + Employee.name + "</td>";
+                    rows += "<td>" + Employee.email + "</td>";
+                    rows += "<td>" + Employee.department + "</td>";
+                    rows += "<td>" + new Date(date).toJSON().slice(0, 10).split('-').reverse().join('-') + "</td>";
+                    rows += "<td><a class='ui-btn' href='" + editUrl +"'>Edit</a></td>";
+                    rows += "<td><a href='javascript:void(0)' class='ui-btn' onclick='" + deleteData +"'>Delete</a></td>";
+
+
+                    rows += "</tr>";
+                    $(bodyAppend).append(rows);
+
+                });
+            }
+        });
+    }
+
+    function DeleteEmployee(Emp_ID) {
+        if (confirm('Are sure wants to delete?')) {
+            var deleteModel = new Object();
+            deleteModel.id = Emp_ID;
+
+            $.ajax({
+                type: "POST",
+                url: "/Employee/Delete",
+                data: JSON.stringify(deleteModel),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                   // alert(data);
+                    window.location = location.protocol + '//' + location.host+"/Employee/Index";
+
+                }
+            });
+        }
+    }
+</script>
